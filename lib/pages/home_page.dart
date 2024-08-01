@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'movies_page.dart';
+import './home/movie_tab.dart';
 import 'current_bookings_page.dart';
 import 'drawer_menu.dart';
 
@@ -23,7 +23,7 @@ class HomePage extends StatelessWidget {
         drawer: DrawerMenu(),
         body: TabBarView(
           children: [
-            MoviesPage(),
+            const MoviesTab(),
             CurrentBookingsPage(),
           ],
         ),
