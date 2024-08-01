@@ -1,69 +1,121 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'booking_confirmation_page.dart';
+import '../data_provider.dart';
 
 class BookingPage extends StatefulWidget {
-  final String movie;
-  final String theatre;
+  final String movieName;
+  final String theatreName;
+  final int remainingSeats;
+  final double pricePerTicket;
+  final String showTime;
 
-  const BookingPage({super.key, required this.movie, required this.theatre});
+  const BookingPage({
+    Key? key,
+    required this.movieName,
+    required this.theatreName,
+    required this.remainingSeats,
+    required this.pricePerTicket,
+    required this.showTime,
+  }) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
   _BookingPageState createState() => _BookingPageState();
 }
 
 class _BookingPageState extends State<BookingPage> {
-  int _selectedSeats = 0;
-  final int _pricePerSeat = 10;
+  int _selectedTickets = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Booking"),
+        title: Text('Booking for ${widget.movieName}'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.movie,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              'Theatre: ${widget.theatreName}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            Text("Cinema: ${widget.theatre}"),
-            Text("Price per seat: \$$_pricePerSeat"),
-            const SizedBox(height: 20),
-            DropdownButton<int>(
-              value: _selectedSeats,
-              onChanged: (int? newValue) {
-                setState(() {
-                  _selectedSeats = newValue!;
-                });
-              },
-              items: List.generate(11, (index) => index)
-                  .map<DropdownMenuItem<int>>((int value) {
-                return DropdownMenuItem<int>(
-                  value: value,
-                  child: Text(value.toString()),
-                );
-              }).toList(),
+            const SizedBox(height: 16.0),
+            Text(
+              'Remaining Seats: ${widget.remainingSeats}',
+              style: const TextStyle(fontSize: 16),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => BookingConfirmationPage(
-                      movie: widget.movie,
-                      theatre: widget.theatre,
-                      seats: _selectedSeats,
-                      totalPrice: _selectedSeats * _pricePerSeat,
+            const SizedBox(height: 16.0),
+            Text(
+              'Price per Ticket: \$${widget.pricePerTicket}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16.0),
+            Row(
+              children: [
+                const Text('Select Tickets:'),
+                const SizedBox(width: 16.0),
+                DropdownButton<int>(
+                  value: _selectedTickets,
+                  items: List.generate(
+                    min(widget.remainingSeats + 1, 10 + 1),
+                    (index) => DropdownMenuItem(
+                      value: index,
+                      child: Text(index.toString()),
                     ),
                   ),
-                );
-              },
-              child: const Text("Confirm Booking"),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedTickets = value!;
+                    });
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16.0),
+            Text(
+              'Total Price: \$${(_selectedTickets * widget.pricePerTicket).toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16.0),
+            ElevatedButton(
+              onPressed: _selectedTickets > 0
+                  ? () {
+                      // if user is logged in, confirm booking
+                      if (Provider.of<DataProvider>(context, listen: false)
+                              .userInfo !=
+                          null) {
+                        Provider.of<DataProvider>(context, listen: false)
+                            .confirmBooking(
+                                widget.movieName,
+                                widget.theatreName,
+                                _selectedTickets * widget.pricePerTicket,
+                                widget.showTime,
+                                _selectedTickets);
+                        // Navigate to Booking Confirmation Page
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BookingConfirmationPage(
+                              movieName: widget.movieName,
+                              theatreName: widget.theatreName,
+                              selectedTickets: _selectedTickets,
+                              totalPrice:
+                                  _selectedTickets * widget.pricePerTicket,
+                            ),
+                          ),
+                        );
+                      } else {
+                        // if user is not logged in, navigate to login page
+                        Navigator.pushNamed(context, '/login');
+                      }
+                    }
+                  : null,
+              child: const Text('Confirm Booking'),
             ),
           ],
         ),
